@@ -75,6 +75,23 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
     return res.status(208).json({ message: "Invalid Login. Check username and password" });
 });
 
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+    // Filter & delete the reviews based on the session username, so that a user can delete only his/her reviews and not other users
+    const isbn = req.params.isbn;
+    const user = req.session.authorization.username;
+    const reviews = books[isbn].reviews
+    if(user){
+        if(user in reviews){
+            delete reviews[user];
+            return res.status(200).send("Review successfully deleted")
+        }else{
+            return res.status(404).json({message: "Could not find review for this user and isbn"});
+        }
+    }
+
+    return res.status(208).json({ message: "Invalid Login. Check username and password" });
+});
+
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
 module.exports.users = users;
