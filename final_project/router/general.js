@@ -37,37 +37,67 @@ public_users.post("/register", (req,res) => {
 
 // Get the book list available in the shop
 public_users.get('/',function (req, res) {
-  res.send(JSON.stringify(books,null,4));
+    Promise.resolve(books)
+    .then(data => res.json(data))
+    .catch(err => res.status(500).json({ error: err.message }));
 });
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
     const isbn = req.params.isbn;
-    res.send(books[isbn]);
+    Promise.resolve(books[isbn])
+    .then(data => {
+      if (data) {
+        res.json(data);
+      } else {
+        res.status(404).json({ error: 'Book not found' });
+      }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
  });
   
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
-    const author = req.params.author;
-    let authorMatches = [];
-    for(i = 1; i <= Object.keys(books).length; i++){
-        if (books[i].author == author){
+    try {   
+        const author = req.params.author;
+        const authorMatches = [];
+        for (let i = 1; i <= Object.keys(books).length; i++) {
+          if (books[i].author === author) {
             authorMatches.push(books[i]);
+          }
         }
-    }
-    res.send(authorMatches);
+    
+        if (authorMatches.length > 0) {
+          res.json(authorMatches);
+        } else {
+          res.status(404).json({ error: 'No books found for this author' });
+        }
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
 });
 
 // Get all books based on title
 public_users.get('/title/:title',function (req, res) {
     const title = req.params.title;
-    let titleMatches = [];
-    for(i = 1; i <= Object.keys(books).length; i++){
-        if (books[i].title == title){
-            titleMatches.push(books[i]);
+
+    Promise.resolve().then(() => {
+        const titleMatches = [];
+        for (let i = 1; i <= Object.keys(books).length; i++) {
+            if (books[i].title === title) {
+                titleMatches.push(books[i]);
+            }
         }
-    }
-    res.send(titleMatches);
+        return titleMatches;
+    })
+    .then(matches => {
+        if (matches.length > 0) {
+            res.json(matches);
+        } else {
+            res.status(404).json({ error: 'No books found with this title' });
+        }
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
 });
 
 //  Get book review
